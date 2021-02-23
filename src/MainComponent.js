@@ -1,31 +1,55 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Table, Button } from "reactstrap";
 
 const Main = () => {
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [email, setEmail] = useState("");
-
+	const [newUserEmail, setNewUserEmail] = useState("");
 	const [userList, setUserList] = useState([]);
+	const [profilePicture, setProfilePicture] = useState("");
 
 	useEffect(() => {
 		axios.get("http://localhost:3001/read").then((response) => {
 			console.log(response.data);
 			setUserList(response.data);
 		});
-	}, []);
+	}, [userList]);
 
 	const addToDataBase = () => {
 		axios.post("http://localhost:3001/insert", {
 			firstName: firstName,
 			lastName: lastName,
 			email: email,
+			imageUri: profilePicture,
 		});
+		setFirstName("");
+		setLastName("");
+		setEmail("");
+		setProfilePicture("");
+	};
+
+	const updateItem = (id) => {
+		axios.put("http://localhost:3001/update", {
+			id: id,
+			newUserEmail: newUserEmail,
+		});
+	};
+
+	const deleteUser = (id) => {
+		axios.delete(`http://localhost:3001/delete/${id}`);
 	};
 
 	return (
 		<div className='App'>
 			<h1>Save User App</h1>
+			<label>Profile Picture</label>
+			<input
+				type='text'
+				placeholder='Image Uri'
+				onChange={(event) => setProfilePicture(event.target.value)}
+			/>
 			<label>First Name</label>
 			<input
 				type='text'
@@ -44,27 +68,66 @@ const Main = () => {
 				placeholder='Email'
 				onChange={(event) => setEmail(event.target.value)}
 			/>
-			<button onClick={addToDataBase}>Add to database</button>
+			<br />
+			<Button color='primary' onClick={addToDataBase}>
+				Add to database
+			</Button>
 			<h1>Users List</h1>
-			{userList && (
-				<table className='table'>
+			{userList.length > 0 && (
+				<Table>
 					<thead>
 						<tr>
-							<th scope='col'>First Name</th>
-							<th scope='col'>Last Name</th>
-							<th scope='col'>Email</th>
+							<th>Profile Picture</th>
+							<th>First Name</th>
+							<th>Last Name</th>
+							<th>Email</th>
 						</tr>
 					</thead>
-					<tbody>
-						{userList.map((user) => (
-							<tr key={user.id}>
+					{userList.map((user) => (
+						<tbody key={user.id}>
+							<tr>
+								<th scope='row'>
+									<img
+										style={{
+											width: "50px",
+											height: "50px",
+										}}
+										src={user.imageUri}
+										alt={user.userName + `profile picture`}
+										className='img-thumbnail'
+									/>
+								</th>
 								<td>{user.userName}</td>
 								<td>{user.userLastName}</td>
 								<td>{user.userEmail}</td>
+								<Button
+									onClick={() => {
+										deleteUser(user._id);
+									}}
+									color='danger'>
+									Delete
+								</Button>
 							</tr>
-						))}
-					</tbody>
-				</table>
+							<tr>
+								<th scope='row'></th>
+								<td></td>
+								<td>
+									<input
+										type='text'
+										placeholder='Email'
+										onChange={(event) => setNewUserEmail(event.target.value)}
+									/>
+									<Button
+										outline
+										color='info'
+										onClick={() => updateItem(user._id)}>
+										Update
+									</Button>
+								</td>
+							</tr>
+						</tbody>
+					))}
+				</Table>
 			)}
 		</div>
 	);
